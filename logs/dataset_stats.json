@@ -1,0 +1,155 @@
+{
+  "seed": 42,
+  "split_ratio": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "raw_total_images": 4752,
+  "deduplicated_total_images": 4740,
+  "removed_near_duplicates": 12,
+  "duplicate_pairs_before_dedup": 14,
+  "duplicate_pairs_after_dedup": 0,
+  "train_test_cross_leakage_pairs": 0,
+  "removed_examples": [
+    {
+      "kept": "Cardboard/Cardboard_132.jpg",
+      "removed": "Metal/Metal_559.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Food Organics/Food Organics_150.jpg",
+      "removed": "Metal/Metal_326.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Food Organics/Food Organics_199.jpg",
+      "removed": "Food Organics/Food Organics_73.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Food Organics/Food Organics_81.jpg",
+      "removed": "Food Organics/Food Organics_82.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Metal/Metal_127.jpg",
+      "removed": "Textile Trash/Textile Trash_219.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Metal/Metal_655.jpg",
+      "removed": "Metal/Metal_658.jpg",
+      "hamming_dist": 2
+    },
+    {
+      "kept": "Metal/Metal_738.jpg",
+      "removed": "Plastic/Plastic_204.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Metal/Metal_738.jpg",
+      "removed": "Plastic/Plastic_763.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Miscellaneous Trash/Miscellaneous Trash_401.jpg",
+      "removed": "Miscellaneous Trash/Miscellaneous Trash_70.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Plastic/Plastic_199.jpg",
+      "removed": "Plastic/Plastic_774.jpg",
+      "hamming_dist": 4
+    },
+    {
+      "kept": "Plastic/Plastic_216.jpg",
+      "removed": "Plastic/Plastic_218.jpg",
+      "hamming_dist": 2
+    },
+    {
+      "kept": "Plastic/Plastic_688.jpg",
+      "removed": "Plastic/Plastic_733.jpg",
+      "hamming_dist": 4
+    }
+  ],
+  "split_totals": {
+    "train": 3318,
+    "val": 711,
+    "test": 711
+  },
+  "raw_class_counts": {
+    "Cardboard": 461,
+    "Food Organics": 411,
+    "Glass": 420,
+    "Metal": 790,
+    "Miscellaneous Trash": 495,
+    "Paper": 500,
+    "Plastic": 921,
+    "Textile Trash": 318,
+    "Vegetation": 436
+  },
+  "clean_class_split_counts": {
+    "Cardboard": {
+      "train": 323,
+      "val": 69,
+      "test": 69
+    },
+    "Food Organics": {
+      "train": 286,
+      "val": 62,
+      "test": 61
+    },
+    "Glass": {
+      "train": 294,
+      "val": 63,
+      "test": 63
+    },
+    "Metal": {
+      "train": 551,
+      "val": 118,
+      "test": 118
+    },
+    "Miscellaneous Trash": {
+      "train": 346,
+      "val": 74,
+      "test": 74
+    },
+    "Paper": {
+      "train": 350,
+      "val": 75,
+      "test": 75
+    },
+    "Plastic": {
+      "train": 641,
+      "val": 138,
+      "test": 137
+    },
+    "Textile Trash": {
+      "train": 222,
+      "val": 47,
+      "test": 48
+    },
+    "Vegetation": {
+      "train": 305,
+      "val": 65,
+      "test": 66
+    }
+  },
+  "before_preprocessing_stats": {
+    "luminance_mean": 156.606,
+    "luminance_std": 10.365,
+    "contrast_std_mean": 41.15,
+    "contrast_std_p10": 25.586,
+    "color_cast_mean": 0.0519,
+    "color_cast_p95": 0.1516
+  },
+  "after_preprocessing_stats": {
+    "luminance_mean": 149.891,
+    "luminance_std": 9.436,
+    "contrast_std_mean": 39.998,
+    "contrast_std_p10": 27.781,
+    "color_cast_mean": 0.0209,
+    "color_cast_p95": 0.0628
+  }
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>분리비전 AI (Bunri-Vision) | 실환경 생활폐기물 9종 비전 판독 &amp; 분리배출 가이드</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <span class="brand-mark" aria-hidden="true">♻</span>
+        <div>
+          <h1 class="brand-title">분리비전 AI <span class="brand-sub">Bunri-Vision</span></h1>
+          <p class="brand-tagline">실환경 오염·혼합 생활폐기물 9종 비전 판독 및 한국형 분리배출 의사결정 시스템</p>
+        </div>
+      </div>
+      <div class="runtime-pill" id="runtime-pill" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="runtime-model-text">모델 상태 확인 중...</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-shell">
+    <div class="tabs-container">
+      <div class="tablist-scroller" role="tablist" aria-label="서비스 주요 메뉴">
+        <button type="button" role="tab" id="tab-scanner" aria-selected="true" data-panel="panel-scanner">
+          실시간 AI 분리배출 판독
+        </button>
+        <button type="button" role="tab" id="tab-benchmark" aria-selected="false" data-panel="panel-benchmark">
+          학습 모델 성능 비교·분석
+        </button>
+        <button type="button" role="tab" id="tab-guide" aria-selected="false" data-panel="panel-guide">
+          사용 안내 &amp; 9종 배출 사전
+        </button>
+      </div>
+
+      <!-- TAB 1: Live AI Waste Scanner -->
+      <div role="tabpanel" id="panel-scanner" aria-labelledby="tab-scanner" tabindex="0">
+        <div class="panel-inner scanner-grid">
+          <!-- Left Column: Upload + Real Test Samples + Exception Verifier -->
+          <section class="card input-card" aria-labelledby="upload-heading">
+            <div class="section-head">
+              <h2 id="upload-heading">1. 폐기물 사진 입력</h2>
+              <span class="badge badge-outline">JPG · PNG · WEBP · BMP (최대 15MB)</span>
+            </div>
+
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="폐기물 이미지 파일 선택 또는 드래그 앤 드롭">
+              <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/bmp" capture="environment" hidden>
+              <div class="dropzone-content">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+                </svg>
+                <p class="drop-title">사진을 클릭하여 업로드하거나 이 영역에 끌어다 놓으세요</p>
+                <p class="drop-desc">스마트폰 접속 시 후면 카메라로 바로 촬영할 수 있습니다 · 단일 품목을 중앙에 배치하세요</p>
+              </div>
+            </div>
+
+            <div class="sample-section">
+              <div class="subsection-header">
+                <h3>원클릭 실전 테스트 샘플 (홀드아웃 테스트셋 9종)</h3>
+                <p>직접 촬영한 사진이 없어도 아래 실제 테스트셋 샘플을 클릭하면 서버의 ONNX 모델이 즉시 추론합니다.</p>
+              </div>
+              <div class="sample-grid" id="sample-grid" aria-label="9종 테스트 샘플 목록">
+                <!-- Populated dynamically from /api/samples -->
+              </div>
+            </div>
+
+            <div class="guardrail-box">
+              <div class="subsection-header">
+                <h3>입력 무결성 &amp; 예외 처리 검증 테스트</h3>
+                <p>비정상 파일(텍스트·손상 데이터·초저해상도·빈 화면) 입력 시 서버 방어 로직이 작동하는지 검증합니다.</p>
+              </div>
+              <div class="exception-btn-row">
+                <button type="button" class="btn-chip" data-exception="non_image_txt">비이미지(.txt) 거부</button>
+                <button type="button" class="btn-chip" data-exception="corrupted_binary">손상된 JPEG 거부</button>
+                <button type="button" class="btn-chip" data-exception="tiny_resolution">초저해상도(24px) 거부</button>
+                <button type="button" class="btn-chip" data-exception="blank_solid">단색 빈 화면 거부</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right Column: Live Inference Result & Explainability -->
+          <section class="card result-card" aria-labelledby="result-heading" aria-live="polite">
+            <div class="section-head">
+              <h2 id="result-heading">2. AI 비전 판독 및 분리배출 의사결정</h2>
+              <span class="latency-tag" id="latency-tag">대기 중</span>
+            </div>
+
+            <!-- Error Banner (shown when validation rejects invalid input) -->
+            <div class="error-banner" id="error-banner" hidden role="alert">
+              <div class="error-banner-head">
+                <strong id="error-code-badge">INPUT_ERROR</strong>
+                <span>입력 예외 처리 작동 완료</span>
+              </div>
+              <p id="error-message-text"></p>
+            </div>
+
+            <!-- Empty Placeholder -->
+            <div class="empty-state" id="empty-state">
+              <p class="empty-headline">왼쪽에서 폐기물 사진을 업로드하거나 테스트 샘플을 클릭해 보세요.</p>
+              <ul class="empty-features">
+                <li><strong>직접 학습한 Bunri-ConvNeXt-Tiny+GeM 모델</strong> 로드 추론 (외부 LLM API 미사용)</li>
+                <li><strong>4단계 도메인 전처리 전·후 비교</strong> (Shades-of-Gray 조명 보정 + LAB-CLAHE 대비 복원)</li>
+                <li><strong>Spatial CAM 히트맵</strong>으로 모델이 주목한 재질·윤곽 부위 실시간 시각화</li>
+                <li><strong>오염 동반 감지 &amp; 자취생 과태료 함정 경고</strong> (초목류 vs 음식물, 오염 재활용품 등)</li>
+              </ul>
+            </div>
+
+            <!-- Active Prediction Content -->
+            <div id="prediction-content" hidden>
+              <div class="decision-hero" id="decision-hero">
+                <div class="decision-main">
+                  <span class="bin-type-pill" id="pred-status-pill">재활용 가능</span>
+                  <h3 class="pred-ko-title" id="pred-ko-title">-</h3>
+                  <p class="pred-bin-target" id="pred-bin-target">-</p>
+                </div>
+                <div class="confidence-block">
+                  <span class="conf-label">보정 신뢰도</span>
+                  <strong class="conf-value" id="pred-confidence">0.0%</strong>
+                  <span class="conf-sub" id="pred-entropy">엔트로피 0.00</span>
+                </div>
+              </div>
+
+              <div class="ground-truth-bar" id="ground-truth-bar" hidden></div>
+
+              <!-- Dynamic Domain Alerts (Contamination, OOD, Vegetation Trap, Boundary) -->
+              <div class="alerts-stack" id="alerts-stack"></div>
+
+              <!-- 3-Stage Vision Inspection Grid -->
+              <div class="vision-triptych">
+                <figure class="vision-frame">
+                  <img id="img-raw" alt="원본 입력 이미지" width="224" height="224">
+                  <figcaption>
+                    <strong>① 원본 입력</strong>
+                    <span id="stat-before">휘도 - · 색편향 -</span>
+                  </figcaption>
+                </figure>
+                <figure class="vision-frame">
+                  <img id="img-preproc" alt="도메인 전처리 적용 이미지" width="224" height="224">
+                  <figcaption>
+                    <strong>② 조명·대비 전처리 후</strong>
+                    <span id="stat-after">휘도 - · 색편향 -</span>
+                  </figcaption>
+                </figure>
+                <figure class="vision-frame">
+                  <img id="img-cam" alt="Spatial CAM 모델 주목 영역 히트맵" width="224" height="224">
+                  <figcaption>
+                    <strong>③ CAM 재질 주목 영역</strong>
+                    <span>붉은 영역일수록 핵심 근거</span>
+                  </figcaption>
+                </figure>
+              </div>
+
+              <!-- Actionable 3-Step Disposal Checklist -->
+              <div class="guidance-box">
+                <h4>환경부 기준 3단계 배출 수칙</h4>
+                <ol class="steps-list" id="steps-list"></ol>
+                <div class="trap-callout">
+                  <strong>과태료·오배출 핵심 주의사항:</strong>
+                  <span id="penalty-trap-text"></span>
+                </div>
+              </div>
+
+              <!-- 9-Class Probability Distribution -->
+              <div class="probs-box">
+                <h4>9개 클래스 보정 확률 분포 (Temperature-Scaled Softmax)</h4>
+                <ul class="prob-bars" id="prob-bars"></ul>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- TAB 2: Model Benchmark & Ablation Dashboard -->
+      <div role="tabpanel" id="panel-benchmark" aria-labelledby="tab-benchmark" hidden="until-found">
+        <div class="panel-inner single-col">
+          <section class="card">
+            <div class="section-head">
+              <h2>직접 학습한 5종 실험 모델 테스트셋 객관적 성능 비교</h2>
+              <span class="badge badge-green">L4 24GB GPU 학습 · RealWaste Hold-out Test Set</span>
+            </div>
+            <p class="panel-lead">
+              무작위 초기화 베이스라인(ScratchResSECNN), 경량 전이학습(MobileNetV3-Small), 표준 파인튜닝(ResNet-50),
+              전처리 제거 Ablation, 그리고 제안 모델(<strong>Bunri-ConvNeXt-Tiny + GeM + 온도 보정</strong>)을 동일한
+              pHash 중복 제거 테스트셋(seed=42)에서 비교한 실측 결과입니다.
+            </p>
+
+            <div tabindex="0" role="region" aria-labelledby="bench-caption" class="table-wrapper">
+              <table class="bench-table">
+                <caption id="bench-caption" class="sr-only">모델별 테스트셋 평가지표 비교표</caption>
+                <thead>
+                  <tr>
+                    <th>모델명</th>
+                    <th>학습 방식</th>
+                    <th>파라미터</th>
+                    <th>Test Macro-F1</th>
+                    <th>Test Accuracy</th>
+                    <th>Top-2 Acc</th>
+                    <th>Macro-AUROC</th>
+                    <th>ECE (보정오차↓)</th>
+                  </tr>
+                </thead>
+                <tbody id="bench-tbody">
+                  <!-- Populated from /api/benchmark -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-head">
+              <h2>최종 배포 모델(Bunri-ConvNeXt-Tiny+GeM) 품목별 상세 성능</h2>
+              <span class="badge badge-outline">9개 생활폐기물 클래스별 정밀도·재현율·F1</span>
+            </div>
+            <div tabindex="0" role="region" aria-label="품목별 상세 성능표" class="table-wrapper">
+              <table class="bench-table">
+                <thead>
+                  <tr>
+                    <th>품목 (한국어 / 영문)</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>Test F1-Score</th>
+                    <th>테스트 샘플 수</th>
+                  </tr>
+                </thead>
+                <tbody id="per-class-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- TAB 3: Usage Guide & 9-Class Sorting Encyclopedia -->
+      <div role="tabpanel" id="panel-guide" aria-labelledby="tab-guide" hidden="until-found">
+        <div class="panel-inner single-col">
+          <section class="card">
+            <h2>서비스 사용 안내 및 AI 판독 원리</h2>
+            <div class="howto-steps">
+              <div class="howto-item">
+                <span class="step-num">STEP 1</span>
+                <h3>단일 품목 촬영 또는 샘플 선택</h3>
+                <p>배출하려는 폐기물 1개를 화면 중앙에 두고 업로드하거나, 9종 홀드아웃 테스트 샘플 카드를 클릭합니다.</p>
+              </div>
+              <div class="howto-item">
+                <span class="step-num">STEP 2</span>
+                <h3>4단계 조명·대비 자동 보정</h3>
+                <p>서버에서 Shades-of-Gray 화이트밸런스와 LAB-CLAHE 지역 대비 보정을 수행하여 어두운 실내·형광등 색편향을 완화합니다.</p>
+              </div>
+              <div class="howto-item">
+                <span class="step-num">STEP 3</span>
+                <h3>CAM 주목 영역 &amp; 오염 복합 판정 확인</h3>
+                <p>모델이 주목한 재질 부위(CAM 히트맵)와 함께 오염 동반 확률·초목류 오배출 경고를 확인한 뒤 안내된 수거함에 배출합니다.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="dict-heading">
+            <h2 id="dict-heading">대한민국 9종 생활폐기물 핵심 분리배출 사전</h2>
+            <p class="panel-lead">품목을 클릭하면 환경부 『내 손안의 분리배출』 기준 세부 수칙과 대표 과태료 주의 사례를 확인할 수 있습니다.</p>
+            <div id="rules-accordion" class="accordion-stack"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>가천대학교 기계학습 프로그래밍 기말 포트폴리오 프로젝트 · 분리비전 AI (Bunri-Vision) · 자체 학습 모델 기반 추론 서비스</p>
+  </footer>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

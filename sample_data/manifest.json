@@ -1,0 +1,65 @@
+[
+  {
+    "id": "cardboard",
+    "filename": "sample_01_cardboard.jpg",
+    "ground_truth_en": "Cardboard",
+    "ground_truth_ko": "골판지·택배 상자",
+    "bin_category": "종이·골판지류 전용 수거함"
+  },
+  {
+    "id": "food_organics",
+    "filename": "sample_02_food_organics.jpg",
+    "ground_truth_en": "Food Organics",
+    "ground_truth_ko": "음식물류 폐기물",
+    "bin_category": "음식물 전용 종량제 봉투 / RFID 수거함"
+  },
+  {
+    "id": "glass",
+    "filename": "sample_03_glass.jpg",
+    "ground_truth_en": "Glass",
+    "ground_truth_ko": "유리병·유리 용기",
+    "bin_category": "유리병류 수거함 (깨진 유리는 불연성 마대)"
+  },
+  {
+    "id": "metal",
+    "filename": "sample_04_metal.jpg",
+    "ground_truth_en": "Metal",
+    "ground_truth_ko": "금속캔·고철류",
+    "bin_category": "캔·고철류 전용 수거함"
+  },
+  {
+    "id": "miscellaneous_trash",
+    "filename": "sample_05_miscellaneous_trash.jpg",
+    "ground_truth_en": "Miscellaneous Trash",
+    "ground_truth_ko": "복합재질·오염 일반쓰레기",
+    "bin_category": "일반 종량제 봉투"
+  },
+  {
+    "id": "paper",
+    "filename": "sample_06_paper.jpg",
+    "ground_truth_en": "Paper",
+    "ground_truth_ko": "일반 종이·인쇄물",
+    "bin_category": "종이류 수거함 (종이팩은 별도 배출)"
+  },
+  {
+    "id": "plastic",
+    "filename": "sample_07_plastic.jpg",
+    "ground_truth_en": "Plastic",
+    "ground_truth_ko": "플라스틱 용기·페트류",
+    "bin_category": "투명페트병 전용함 / 플라스틱류 수거함"
+  },
+  {
+    "id": "textile_trash",
+    "filename": "sample_08_textile_trash.jpg",
+    "ground_truth_en": "Textile Trash",
+    "ground_truth_ko": "폐의류·섬유류",
+    "bin_category": "의류수거함 (오염·솜류는 종량제/대형폐기물)"
+  },
+  {
+    "id": "vegetation",
+    "filename": "sample_09_vegetation.jpg",
+    "ground_truth_en": "Vegetation",
+    "ground_truth_ko": "초목류·식물 잔재물",
+    "bin_category": "일반 종량제 봉투 (음식물쓰레기 절대 금지!)"
+  }
+]

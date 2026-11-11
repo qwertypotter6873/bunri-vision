@@ -1,0 +1,25 @@
+{
+  "model_name": "Bunri-ConvNeXt-Tiny+GeM",
+  "backbone": "convnext_tiny.fb_in22k_ft_in1k",
+  "num_classes": 9,
+  "classes": [
+    "Cardboard",
+    "Food Organics",
+    "Glass",
+    "Metal",
+    "Miscellaneous Trash",
+    "Paper",
+    "Plastic",
+    "Textile Trash",
+    "Vegetation"
+  ],
+  "image_size": 224,
+  "temperature": 0.7014,
+  "test_macro_f1": 0.9603,
+  "test_accuracy": 0.9634,
+  "test_top2_accuracy": 0.9944,
+  "test_macro_auroc": 0.9978,
+  "test_ece": 0.0093,
+  "onnx_int8_test_macro_f1": 0.9607,
+  "onnx_cpu_latency_ms": 32.84
+}
