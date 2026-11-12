@@ -8,7 +8,7 @@
 
 | 항목 | 내용 |
 | :--- | :--- |
-| **학번** | `20XXXXXXX` |
+| **학번** | `201935607` |
 | **이름** | 김대현 |
 | **과목명** | 가천대학교 기계학습 프로그래밍 (기말고사 대체 포트폴리오 프로젝트) |
 | **프로젝트명** | 분리비전 AI (`Bunri-Vision`) |
@@ -147,7 +147,7 @@ def adaptive_lab_clahe(rgb_uint8: np.ndarray, clip_limit: float = 1.8, blend_alp
 
 - **분할 방식**: `pHash` 중복 제거 완료 데이터(4,740장)에 대해 **계층화 무작위 분할(`StratifiedShuffleSplit`, `seed = 42`)** 2단 적용
 - **분할 비율 및 수량**: **Train 70% (`3,318장`) / Validation 15% (`711장`) / Test 15% (`711장`)**
-- **테스트셋 격리 원칙**: 하이퍼파라미터 탐색·최적 에폭 선택·온도 스케일링(T*) 학습은 오직 **Validation 셋(`711장`)**에서만 수행하였으며, **Test 셋(`711장`)**은 최종 모델 간 객관적 성능 보고 시 단 1회 평가하였습니다 (`logs/split_manifest.csv`에 전체 분할 매니페스트 기록).
+- **테스트셋 격리 원칙**: 하이퍼파라미터 탐색·최적 에폭 선택·온도 스케일링(`T*`) 학습은 오직 **Validation 셋(`711장`)**에서만 수행하였으며, **Test 셋(`711장`)**은 최종 모델 간 객관적 성능 보고 시 단 1회 평가하였습니다 (`logs/split_manifest.csv`에 전체 분할 매니페스트 기록).
 
 ---
 
@@ -163,7 +163,7 @@ def adaptive_lab_clahe(rgb_uint8: np.ndarray, clip_limit: float = 1.8, blend_alp
 | **베이스라인 2** | **MobileNetV3-Small**<br>(`m2_mobilenetv3`) | **전이학습 + 파인튜닝**<br>(ImageNet-1K) | **1.53M** | 2에폭 분류 헤드 선형 탐색(Warmup) 후 전 계층 차등 학습률 미세조정(`backbone 3e-4`, `head 1.2e-3`) · 30 Epochs |
 | **비교 모델 3** | **ResNet-50**<br>(`m3_resnet50`) | **파인튜닝**<br>(ImageNet-1K) | **23.53M** | 병목 잔차 블록 기반 표준 비전 벤치마크 모델 · 2에폭 헤드 워밍업 후 차등 학습률(`1.8e-4 / 9e-4`) 미세조정 · 30 Epochs |
 | **Ablation 4** | **ConvNeXt-Tiny (Raw)**<br>(`m4_ablation_raw`) | **파인튜닝**<br>(전처리·불균형 보정 제거) | **27.83M** | 제안 모델과 동일 백본에서 **도메인 4단계 전처리·클래스 가중 손실·Mixup을 모두 제거**한 순수 리사이즈 대조군 · 28 Epochs |
-| **최종 제안 모델** | **Bunri-ConvNeXt-Tiny+GeM**<br>(`m4_proposed_convnext`) | **2단계 차등 파인튜닝 + GeM 풀링 + 온도 보정** | **27.83M** | `convnext_tiny.fb_in22k_ft_in1k` 7×7 대수용영역 백본 + **Dual Avg/GeM 질감 풀링(p 학습)** + **Class-Balanced Label Smoothing(0.06)** + **검증셋 NLL 기반 Temperature Scaling(T*=0.7014)** + **1×1 Conv 단일 패스 Spatial CAM 내장 ONNX 변환** · 32 Epochs |
+| **최종 제안 모델** | **Bunri-ConvNeXt-Tiny+GeM**<br>(`m4_proposed_convnext`) | **2단계 차등 파인튜닝 + GeM 풀링 + 온도 보정** | **27.83M** | `convnext_tiny.fb_in22k_ft_in1k` 7×7 대수용영역 백본 + **Dual Avg/GeM 질감 풀링(p 학습)** + **Class-Balanced Label Smoothing(0.06)** + **검증셋 NLL 기반 Temperature Scaling(`T* = 0.7014`)** + **1×1 Conv 단일 패스 Spatial CAM 내장 ONNX 변환** · 32 Epochs |
 
 ### 4.2 모델 선정 이유
 
