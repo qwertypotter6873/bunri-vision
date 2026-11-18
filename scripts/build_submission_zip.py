@@ -38,6 +38,7 @@ def build_zip(root_dir: str = ".", out_dir: str = "..") -> Path:
         root / "requirements-train.txt",
         root / "Dockerfile",
         root / ".gitignore",
+        root / ".github" / "workflows" / "deploy-pages.yml",
         root / "models" / "model_metadata.json",
     ]
 

@@ -6,7 +6,7 @@
   <title>분리비전 AI (Bunri-Vision) | 실환경 생활폐기물 9종 비전 판독 &amp; 분리배출 가이드</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
   <header class="site-header">
@@ -63,17 +63,17 @@
             <div class="sample-section">
               <div class="subsection-header">
                 <h3>원클릭 실전 테스트 샘플 (홀드아웃 테스트셋 9종)</h3>
-                <p>직접 촬영한 사진이 없어도 아래 실제 테스트셋 샘플을 클릭하면 서버의 ONNX 모델이 즉시 추론합니다.</p>
+                <p>직접 촬영한 사진이 없어도 아래 실제 테스트셋 샘플을 클릭하면 자체 학습 ONNX 모델이 즉시 추론합니다.</p>
               </div>
               <div class="sample-grid" id="sample-grid" aria-label="9종 테스트 샘플 목록">
-                <!-- Populated dynamically from /api/samples -->
+                <!-- Populated dynamically -->
               </div>
             </div>
 
             <div class="guardrail-box">
               <div class="subsection-header">
                 <h3>입력 무결성 &amp; 예외 처리 검증 테스트</h3>
-                <p>비정상 파일(텍스트·손상 데이터·초저해상도·빈 화면) 입력 시 서버 방어 로직이 작동하는지 검증합니다.</p>
+                <p>비정상 파일(텍스트·손상 데이터·초저해상도·빈 화면) 입력 시 방어 로직이 작동하는지 실시간 검증합니다.</p>
               </div>
               <div class="exception-btn-row">
                 <button type="button" class="btn-chip" data-exception="non_image_txt">비이미지(.txt) 거부</button>
@@ -270,9 +270,11 @@
   </main>
 
   <footer class="site-footer">
-    <p>가천대학교 기계학습 프로그래밍 기말 포트폴리오 프로젝트 · 분리비전 AI (Bunri-Vision) · 자체 학습 모델 기반 추론 서비스</p>
+    <p>가천대학교 기계학습 프로그래밍 기말 포트폴리오 프로젝트 (201935607 김대현) · 분리비전 AI (Bunri-Vision) · 자체 학습 ONNX 모델 기반 추론 서비스</p>
   </footer>
 
-  <script src="/static/app.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js" defer></script>
+  <script src="static/vision_engine.js" defer></script>
+  <script src="static/app.js" defer></script>
 </body>
 </html>

@@ -53,6 +53,10 @@
   const emptyState = document.getElementById("empty-state");
   const predictionContent = document.getElementById("prediction-content");
 
+  // Runtime mode: "fastapi" when local backend is running, "wasm" on GitHub Pages / static hosting
+  let runtimeMode = "wasm";
+  let browserEngine = null;
+
   function showError(code, msg) {
     errorBanner.hidden = false;
     errorCodeBadge.textContent = code;
@@ -152,19 +156,32 @@
     latencyTag.textContent = "AI 모델 추론 중...";
     document.querySelectorAll(".sample-btn").forEach((b) => b.classList.remove("active"));
 
-    const formData = new FormData();
-    formData.append("file", file);
+    if (runtimeMode === "fastapi") {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("api/predict", { method: "POST", body: formData });
+        const payload = await res.json();
+        if (!res.ok || payload.error) {
+          showError(payload.error_code || "UPLOAD_ERROR", payload.message || "파일 검증 실패");
+          return;
+        }
+        renderPrediction(payload);
+      } catch {
+        showError("NETWORK_ERROR", "로컬 서버와 통신 중 오류가 발생했습니다.");
+      }
+      return;
+    }
 
     try {
-      const res = await fetch("/api/predict", { method: "POST", body: formData });
-      const payload = await res.json();
-      if (!res.ok || payload.error) {
-        showError(payload.error_code || "UPLOAD_ERROR", payload.message || "파일 검증 실패");
-        return;
-      }
+      const payload = await browserEngine.predictBlob(file, file.name || "upload.jpg", file.type || "");
       renderPrediction(payload);
     } catch (err) {
-      showError("NETWORK_ERROR", "서버와 통신 중 오류가 발생했습니다.");
+      if (window.BunriVision && err instanceof window.BunriVision.InputValidationError) {
+        showError(err.code, err.message);
+      } else {
+        showError("INFERENCE_ERROR", err && err.message ? err.message : "온디바이스 모델 추론 중 오류가 발생했습니다.");
+      }
     }
   }
 
@@ -199,119 +216,198 @@
     btn.addEventListener("click", async () => {
       const caseType = btn.dataset.exception;
       latencyTag.textContent = "예외 검증 중...";
-      const res = await fetch(`/api/test-exception/${caseType}`, { method: "POST" });
-      const payload = await res.json();
+      if (runtimeMode === "fastapi") {
+        const res = await fetch(`api/test-exception/${caseType}`, { method: "POST" });
+        const payload = await res.json();
+        if (payload.error) {
+          showError(payload.error_code, `[테스트 파일: ${payload.tested_file}] ${payload.message}`);
+        }
+        return;
+      }
+      const payload = await browserEngine.runExceptionTest(caseType);
       if (payload.error) {
         showError(payload.error_code, `[테스트 파일: ${payload.tested_file}] ${payload.message}`);
       }
     });
   });
 
-  async function initApp() {
-    try {
-      const health = await (await fetch("/api/health")).json();
-      const f1 = health.metadata && health.metadata.test_macro_f1 ? ` · Test F1 ${health.metadata.test_macro_f1}` : "";
-      runtimeText.textContent = `자체 학습 가중치 로드됨 (${health.loaded_checkpoint}${f1})`;
-    } catch {
-      runtimeText.textContent = "오프라인 상태";
+  function populateBenchmarkTables(bench) {
+    const tbody = document.getElementById("bench-tbody");
+    const order = [
+      "m1_scratch_cnn",
+      "m2_mobilenetv3",
+      "m3_resnet50",
+      "m4_ablation_raw",
+      "m4_proposed_convnext",
+    ];
+    tbody.replaceChildren();
+    for (const key of order) {
+      const m = bench.models && bench.models[key];
+      if (!m) continue;
+      const tr = document.createElement("tr");
+      if (key === bench.selected_final_model) tr.className = "highlight-row";
+      tr.innerHTML = `
+        <th>${m.display_name}</th>
+        <td>${m.training_mode}</td>
+        <td>${m.param_millions}M</td>
+        <td>${m.test_macro_f1.toFixed(4)}</td>
+        <td>${(m.test_accuracy * 100).toFixed(2)}%</td>
+        <td>${(m.test_top2_accuracy * 100).toFixed(2)}%</td>
+        <td>${m.test_macro_auroc.toFixed(4)}</td>
+        <td>${m.test_ece.toFixed(4)}</td>
+      `;
+      tbody.appendChild(tr);
     }
 
-    try {
-      const { samples } = await (await fetch("/api/samples")).json();
-      sampleGrid.replaceChildren();
-      for (const s of samples) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "sample-btn";
-        const img = document.createElement("img");
-        img.src = s.image_url;
-        img.alt = `${s.ground_truth_ko} 테스트 샘플`;
-        img.width = 120;
-        img.height = 120;
-        img.loading = "lazy";
-        const label = document.createElement("span");
-        label.textContent = s.ground_truth_ko;
-        btn.append(img, label);
-        btn.addEventListener("click", async () => {
-          document.querySelectorAll(".sample-btn").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          latencyTag.textContent = "샘플 추론 중...";
-          const res = await fetch(`/api/predict-sample/${s.id}`, { method: "POST" });
+    const finalModel = bench.models && bench.models[bench.selected_final_model];
+    const perClassBody = document.getElementById("per-class-tbody");
+    if (finalModel && finalModel.per_class) {
+      perClassBody.replaceChildren();
+      for (const [enName, stats] of Object.entries(finalModel.per_class)) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <th>${stats.ko_name} (${enName})</th>
+          <td>${stats.precision.toFixed(4)}</td>
+          <td>${stats.recall.toFixed(4)}</td>
+          <td><strong>${stats.f1.toFixed(4)}</strong></td>
+          <td>${stats.support}장</td>
+        `;
+        perClassBody.appendChild(tr);
+      }
+    }
+  }
+
+  function populateRulesAccordion(classes) {
+    const acc = document.getElementById("rules-accordion");
+    acc.replaceChildren();
+    classes.forEach((r, idx) => {
+      const det = document.createElement("details");
+      det.name = "waste-dict";
+      if (idx === 0) det.open = true;
+      const sum = document.createElement("summary");
+      sum.textContent = `${r.ko_name} (${r.en_name}) — ${r.bin_category}`;
+      const body = document.createElement("div");
+      body.className = "accordion-body";
+      body.innerHTML = `
+        <p><strong>대표 품목:</strong> ${r.examples}</p>
+        <p><strong>배출 핵심:</strong> ${r.steps.join(" / ")}</p>
+        <p><strong>주의사항:</strong> ${r.penalty_trap}</p>
+      `;
+      det.append(sum, body);
+      acc.appendChild(det);
+    });
+  }
+
+  function populateSamples(samples) {
+    sampleGrid.replaceChildren();
+    for (const s of samples) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sample-btn";
+      const imgUrl = s.image_url ? s.image_url.replace(/^\//, "") : `samples/${s.filename}`;
+      const img = document.createElement("img");
+      img.src = imgUrl;
+      img.alt = `${s.ground_truth_ko} 테스트 샘플`;
+      img.width = 120;
+      img.height = 120;
+      img.loading = "lazy";
+      const label = document.createElement("span");
+      label.textContent = s.ground_truth_ko;
+      btn.append(img, label);
+      btn.addEventListener("click", async () => {
+        document.querySelectorAll(".sample-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        latencyTag.textContent = "샘플 추론 중...";
+
+        if (runtimeMode === "fastapi") {
+          const res = await fetch(`api/predict-sample/${s.id}`, { method: "POST" });
           const payload = await res.json();
           renderPrediction(payload);
-        });
-        sampleGrid.appendChild(btn);
-      }
-    } catch {}
-
-    try {
-      const bench = await (await fetch("/api/benchmark")).json();
-      const tbody = document.getElementById("bench-tbody");
-      const order = [
-        "m1_scratch_cnn",
-        "m2_mobilenetv3",
-        "m3_resnet50",
-        "m4_ablation_raw",
-        "m4_proposed_convnext",
-      ];
-      tbody.replaceChildren();
-      for (const key of order) {
-        const m = bench.models && bench.models[key];
-        if (!m) continue;
-        const tr = document.createElement("tr");
-        if (key === bench.selected_final_model) tr.className = "highlight-row";
-        tr.innerHTML = `
-          <th>${m.display_name}</th>
-          <td>${m.training_mode}</td>
-          <td>${m.param_millions}M</td>
-          <td>${m.test_macro_f1.toFixed(4)}</td>
-          <td>${(m.test_accuracy * 100).toFixed(2)}%</td>
-          <td>${(m.test_top2_accuracy * 100).toFixed(2)}%</td>
-          <td>${m.test_macro_auroc.toFixed(4)}</td>
-          <td>${m.test_ece.toFixed(4)}</td>
-        `;
-        tbody.appendChild(tr);
-      }
-
-      const finalModel = bench.models && bench.models[bench.selected_final_model];
-      const perClassBody = document.getElementById("per-class-tbody");
-      if (finalModel && finalModel.per_class) {
-        perClassBody.replaceChildren();
-        for (const [enName, stats] of Object.entries(finalModel.per_class)) {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <th>${stats.ko_name} (${enName})</th>
-            <td>${stats.precision.toFixed(4)}</td>
-            <td>${stats.recall.toFixed(4)}</td>
-            <td><strong>${stats.f1.toFixed(4)}</strong></td>
-            <td>${stats.support}장</td>
-          `;
-          perClassBody.appendChild(tr);
+          return;
         }
+
+        try {
+          const imgResp = await fetch(imgUrl);
+          const blob = await imgResp.blob();
+          const payload = await browserEngine.predictBlob(blob, s.filename, "image/jpeg");
+          payload.sample_ground_truth = s;
+          renderPrediction(payload);
+        } catch (err) {
+          showError("SAMPLE_ERROR", err && err.message ? err.message : "샘플 추론 중 오류가 발생했습니다.");
+        }
+      });
+      sampleGrid.appendChild(btn);
+    }
+  }
+
+  async function detectFastApiBackend() {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 900);
+      const res = await fetch("api/health", { signal: ctrl.signal });
+      clearTimeout(timer);
+      const ctype = res.headers.get("content-type") || "";
+      if (res.ok && ctype.includes("application/json")) {
+        return await res.json();
       }
     } catch {}
+    return null;
+  }
+
+  async function initApp() {
+    const health = await detectFastApiBackend();
+    if (health && health.status === "ok") {
+      runtimeMode = "fastapi";
+      const f1 = health.metadata && health.metadata.test_macro_f1 ? ` · Test F1 ${health.metadata.test_macro_f1}` : "";
+      runtimeText.textContent = `자체 학습 가중치 로드됨 (${health.loaded_checkpoint}${f1})`;
+
+      try {
+        const { samples } = await (await fetch("api/samples")).json();
+        populateSamples(samples);
+      } catch {}
+      try {
+        const bench = await (await fetch("api/benchmark")).json();
+        populateBenchmarkTables(bench);
+      } catch {}
+      try {
+        const { classes } = await (await fetch("api/rules")).json();
+        populateRulesAccordion(classes);
+      } catch {}
+      return;
+    }
+
+    // Serverless On-Device Mode (GitHub Pages + ONNX Runtime Web WASM)
+    runtimeMode = "wasm";
+    browserEngine = new window.BunriVision.BunriBrowserEngine("models/bunri_convnext_tiny_int8.onnx");
+
+    // Populate UI grids immediately while ONNX weights initialize in parallel
+    populateRulesAccordion(Object.values(window.BunriVision.KOREAN_WASTE_RULES));
+
+    fetch("data/samples_manifest.json")
+      .then((r) => r.json())
+      .then((items) => populateSamples(items))
+      .catch(() => {});
+
+    fetch("data/benchmark_results.json")
+      .then((r) => r.json())
+      .then((bench) => populateBenchmarkTables(bench))
+      .catch(() => {});
 
     try {
-      const { classes } = await (await fetch("/api/rules")).json();
-      const acc = document.getElementById("rules-accordion");
-      acc.replaceChildren();
-      classes.forEach((r, idx) => {
-        const det = document.createElement("details");
-        det.name = "waste-dict";
-        if (idx === 0) det.open = true;
-        const sum = document.createElement("summary");
-        sum.textContent = `${r.ko_name} (${r.en_name}) — ${r.bin_category}`;
-        const body = document.createElement("div");
-        body.className = "accordion-body";
-        body.innerHTML = `
-          <p><strong>대표 품목:</strong> ${r.examples}</p>
-          <p><strong>배출 핵심:</strong> ${r.steps.join(" / ")}</p>
-          <p><strong>주의사항:</strong> ${r.penalty_trap}</p>
-        `;
-        det.append(sum, body);
-        acc.appendChild(det);
+      runtimeText.textContent = "자체 학습 ONNX 가중치 로딩 중... (32.3MB)";
+      await browserEngine.init((pct, fromCache) => {
+        if (fromCache) {
+          runtimeText.textContent = "캐시에서 가중치 초기화 중...";
+        } else {
+          runtimeText.textContent = `자체 학습 가중치 다운로드 중... ${pct}% (32.3MB)`;
+        }
       });
-    } catch {}
+      runtimeText.textContent = "자체 학습 가중치 로드됨 (bunri_convnext_tiny_int8.onnx · WASM · Test F1 0.9607)";
+      document.body.dataset.modelReady = "true";
+    } catch (err) {
+      runtimeText.textContent = "모델 로드 오류 (새로고침 필요)";
+      showError("MODEL_LOAD_ERROR", err && err.message ? err.message : "ONNX 모델을 불러오지 못했습니다.");
+    }
   }
 
   initApp();

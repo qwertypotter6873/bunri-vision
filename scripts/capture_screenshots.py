@@ -24,8 +24,12 @@ def capture(base_url: str, out_dir: str = "assets/screenshots") -> None:
 
         print(f"[NAV] Opening {base_url} ...")
         page.goto(base_url, wait_until="networkidle", timeout=60000)
-        page.wait_for_selector(".sample-btn", timeout=20000)
-        page.wait_for_timeout(600)
+        page.wait_for_selector(".sample-btn", timeout=30000)
+        page.wait_for_function(
+            "document.getElementById('runtime-model-text').innerText.includes('자체 학습 가중치 로드됨')",
+            timeout=60000,
+        )
+        page.wait_for_timeout(400)
 
         # Screenshot 1: Main overview with 9 held-out test samples ready
         page.screenshot(path=str(out / "screen1_main_overview.png"), full_page=False)
@@ -34,15 +38,22 @@ def capture(base_url: str, out_dir: str = "assets/screenshots") -> None:
         # Screenshot 2: Click Plastic sample -> shows 3-view (raw / WB+CLAHE / Spatial CAM) + 3-step guide + 9-class bars
         plastic_btn = page.locator(".sample-btn").nth(6)  # Plastic
         plastic_btn.click()
-        page.wait_for_selector("#prediction-content:not([hidden])", timeout=20000)
-        page.wait_for_timeout(800)
+        page.wait_for_function(
+            "document.getElementById('pred-ko-title').innerText.includes('플라스틱')",
+            timeout=30000,
+        )
+        page.wait_for_timeout(500)
         page.screenshot(path=str(out / "screen2_prediction_cam.png"), full_page=True)
         print("[OK] Saved screen2_prediction_cam.png")
 
         # Screenshot 3: Click Vegetation sample -> shows high-impact Korean sorting penalty trap warning!
         veg_btn = page.locator(".sample-btn").nth(8)  # Vegetation
         veg_btn.click()
-        page.wait_for_timeout(900)
+        page.wait_for_function(
+            "document.getElementById('pred-ko-title').innerText.includes('초목류')",
+            timeout=30000,
+        )
+        page.wait_for_timeout(500)
         page.screenshot(path=str(out / "screen3_vegetation_alert.png"), full_page=True)
         print("[OK] Saved screen3_vegetation_alert.png")
 

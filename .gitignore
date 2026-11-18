@@ -18,3 +18,4 @@ models/*.pt
 models/bunri_convnext_tiny.onnx
 logs_train_stdout.txt
 *.zip
+_site/
