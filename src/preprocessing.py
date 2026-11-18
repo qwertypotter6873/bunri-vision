@@ -33,8 +33,11 @@ ALLOWED_MIME_TYPES = {
     "image/png",
     "image/webp",
     "image/bmp",
+    "image/heic",
+    "image/heif",
+    "image/avif",
 }
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".heic", ".heif", ".avif"}
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024  # 15 MB
 MIN_IMAGE_DIM = 48
 

@@ -296,6 +296,56 @@ svg {
   color: var(--text-muted);
 }
 
+.upload-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-block-start: 0.7rem;
+}
+
+@media (max-width: 420px) {
+  .upload-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-upload {
+  min-block-size: 44px;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+}
+
+.btn-upload:active {
+  transform: translateY(1px);
+}
+
+.btn-upload-primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: 1px solid var(--accent);
+}
+
+.btn-upload-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btn-upload-secondary {
+  background: var(--surface);
+  color: var(--accent-strong);
+  border: 1px solid #93b5a3;
+}
+
+.btn-upload-secondary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
 /* Sample Grid */
 .sample-section,
 .guardrail-box {

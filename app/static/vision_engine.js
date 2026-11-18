@@ -165,7 +165,7 @@
     },
   };
 
-  const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".bmp"]);
+  const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".bmp", ".heic", ".heif", ".avif"]);
   const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
   const MIN_IMAGE_DIM = 48;
   const IMAGENET_MEAN = [0.485, 0.456, 0.406];

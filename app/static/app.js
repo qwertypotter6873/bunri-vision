@@ -46,6 +46,9 @@
   const sampleGrid = document.getElementById("sample-grid");
   const dropzone = document.getElementById("dropzone");
   const fileInput = document.getElementById("file-input");
+  const cameraInput = document.getElementById("camera-input");
+  const btnGallery = document.getElementById("btn-gallery");
+  const btnCamera = document.getElementById("btn-camera");
   const latencyTag = document.getElementById("latency-tag");
   const errorBanner = document.getElementById("error-banner");
   const errorCodeBadge = document.getElementById("error-code-badge");
@@ -192,6 +195,18 @@
       fileInput.click();
     }
   });
+  if (btnGallery) {
+    btnGallery.addEventListener("click", () => fileInput.click());
+  }
+  if (btnCamera && cameraInput) {
+    btnCamera.addEventListener("click", () => cameraInput.click());
+    cameraInput.addEventListener("change", () => {
+      if (cameraInput.files && cameraInput.files[0]) {
+        uploadFile(cameraInput.files[0]);
+        cameraInput.value = "";
+      }
+    });
+  }
   fileInput.addEventListener("change", () => {
     if (fileInput.files && fileInput.files[0]) {
       uploadFile(fileInput.files[0]);

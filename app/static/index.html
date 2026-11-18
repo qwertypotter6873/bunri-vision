@@ -46,18 +46,29 @@
           <section class="card input-card" aria-labelledby="upload-heading">
             <div class="section-head">
               <h2 id="upload-heading">1. 폐기물 사진 입력</h2>
-              <span class="badge badge-outline">JPG · PNG · WEBP · BMP (최대 15MB)</span>
+              <span class="badge badge-outline">JPG · PNG · WEBP · HEIC (최대 15MB)</span>
             </div>
 
-            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="폐기물 이미지 파일 선택 또는 드래그 앤 드롭">
-              <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/bmp" capture="environment" hidden>
+            <input type="file" id="file-input" accept="image/*" hidden>
+            <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="앨범 또는 파일에서 폐기물 이미지 업로드 (드래그 앤 드롭 지원)">
               <div class="dropzone-content">
                 <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
                 </svg>
-                <p class="drop-title">사진을 클릭하여 업로드하거나 이 영역에 끌어다 놓으세요</p>
-                <p class="drop-desc">스마트폰 접속 시 후면 카메라로 바로 촬영할 수 있습니다 · 단일 품목을 중앙에 배치하세요</p>
+                <p class="drop-title">클릭하여 앨범·파일에서 선택하거나 사진을 끌어다 놓으세요</p>
+                <p class="drop-desc">모바일 사진 보관함(갤러리)·파일 탐색기 업로드 및 후면 카메라 촬영을 모두 지원합니다</p>
               </div>
+            </div>
+
+            <div class="upload-actions">
+              <button type="button" class="btn-upload btn-upload-primary" id="btn-gallery">
+                앨범 · 파일에서 업로드
+              </button>
+              <button type="button" class="btn-upload btn-upload-secondary" id="btn-camera">
+                카메라 바로 촬영
+              </button>
             </div>
 
             <div class="sample-section">
