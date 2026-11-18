@@ -49,6 +49,18 @@ def verify_all(root_dir: str = ".") -> None:
             if hdr not in lines:
                 errors.append(f"README missing exact required header: '{hdr}'")
 
+        # Ensure all non-code tildes (~) in .md files are escaped as \~ to prevent GFM strikethrough
+        in_fence = False
+        for lno, raw_ln in enumerate(text.splitlines(), 1):
+            if raw_ln.strip().startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            stripped_inline_code = re.sub(r"`[^`]*`", "", raw_ln)
+            if re.search(r"(?<!\\)~", stripped_inline_code):
+                errors.append(f"README.md L{lno} has unescaped '~' outside code span: {raw_ln}")
+
     # 2. Verify submission.json keys
     sub_path = root / "submission.json"
     if not sub_path.exists():

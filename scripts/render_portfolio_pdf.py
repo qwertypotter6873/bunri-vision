@@ -16,10 +16,12 @@ def render_pdf(readme_path: str = "README.md", out_pdf: str = "포트폴리오_R
     base_dir = md_file.parent
     md_text = md_file.read_text(encoding="utf-8")
 
-    html_body = markdown.markdown(
-        md_text,
+    md = markdown.Markdown(
         extensions=["tables", "fenced_code", "sane_lists", "nl2br"],
     )
+    if "~" not in md.ESCAPED_CHARS:
+        md.ESCAPED_CHARS.append("~")
+    html_body = md.convert(md_text)
 
     full_html = f"""<!DOCTYPE html>
 <html lang="ko">
