@@ -3,7 +3,7 @@
   "name": "김대현",
   "title": "분리비전 AI (Bunri-Vision): 실환경 오염·혼합 생활폐기물 9종 비전 판독 및 한국형 분리배출 의사결정 시스템",
   "github_url": "https://github.com/qwertypotter6873/bunri-vision",
-  "demo_url": "https://bunri-vision-30945587032.asia-northeast3.run.app",
+  "demo_url": "https://qwertypotter6873.github.io/bunri-vision/",
   "data_type": "image",
   "training": "Scratch + 전이학습 + 파인튜닝",
   "models": [

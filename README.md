@@ -12,7 +12,7 @@
 | **이름** | 김대현 |
 | **과목명** | 가천대학교 기계학습 프로그래밍 (기말고사 대체 포트폴리오 프로젝트) |
 | **프로젝트명** | 분리비전 AI (`Bunri-Vision`) |
-| **공개 데모 URL** | **https://bunri-vision-30945587032.asia-northeast3.run.app** |
+| **공개 데모 URL** | **https://qwertypotter6873.github.io/bunri-vision/** |
 | **GitHub 저장소 URL** | **https://github.com/qwertypotter6873/bunri-vision** |
 | **학습 가중치 릴리즈** | **https://github.com/qwertypotter6873/bunri-vision/releases/tag/v1.0.0** |
 
@@ -196,7 +196,7 @@ def adaptive_lab_clahe(rgb_uint8: np.ndarray, clip_limit: float = 1.8, blend_alp
 
 1. **압도적인 분류 정확도**: 제안 모델(`Bunri-ConvNeXt-Tiny+GeM`)은 `Scratch` 베이스라인 대비 **Test Macro-F1 +12.24%p**(`0.8379 → 0.9603`), `ResNet-50` 대비 **+3.97%p** 향상되었으며, `Top-2 Accuracy 99.44%`를 기록해 유사 경계 품목 안내까지 포함할 경우 사실상 거의 모든 샘플에서 올바른 배출 가이드를 제시합니다.
 2. **도메인 전처리 및 불균형 보정의 입증된 효과**: 동일 백본에서 도메인 전처리·불균형 보정을 제거한 `Ablation`(`0.9540`, 오분류 33건) 대비 제안 파이프라인(`0.9603`, 오분류 26건)은 테스트셋 오분류 건수를 **21.2% 줄였고**, 특히 `골판지(F1 1.0000)`, `종이(0.9868)`, `초목류(0.9778)`, `플라스틱(0.9675)`에서 큰 향상을 달성했습니다.
-3. **신뢰도 보정(ECE 0.0093) 및 경량 서빙(32.3MB / 32.8ms)**: 검증셋 NLL 최소화로 학습한 온도 계수 `T* = 0.7014`를 통해 기대 보정 오차(`ECE`)를 `0.0738 → 0.0093`(**87.4% 개선**)으로 낮추어 오염 복합 판정 규칙의 확률 신뢰성을 확보했으며, `MatMul/Gemm` 선택적 INT8 동적 양자화를 통해 정확도 저하 없이(`Macro-F1 0.9607`) 가중치 용량을 **106.27MB → 32.30MB**로 줄여 Cloud Run 서버리스 환경에서 평균 **32.84ms**의 초고속 CPU 추론을 달성하였습니다.
+3. **신뢰도 보정(ECE 0.0093) 및 온디바이스·경량 서빙(32.3MB / CPU 32.8ms)**: 검증셋 NLL 최소화로 학습한 온도 계수 `T* = 0.7014`를 통해 기대 보정 오차(`ECE`)를 `0.0738 → 0.0093`(**87.4% 개선**)으로 낮추어 오염 복합 판정 규칙의 확률 신뢰성을 확보했으며, `MatMul/Gemm` 선택적 INT8 동적 양자화를 통해 정확도 저하 없이(`Macro-F1 0.9607`) 가중치 용량을 **106.27MB → 32.30MB**로 줄여 로컬 CPU 서버에서 평균 **32.84ms**, 별도 백엔드 서버 없는 브라우저 온디바이스(`ONNX Runtime Web WASM`) 환경에서도 **~0.39s** 만에 전처리·추론·CAM 렌더링까지 완결하였습니다.
 
 ### 5.3 학습곡선 · 혼동행렬 · 품목별 성능 · 오분류 사례 심층 분석
 
@@ -224,29 +224,29 @@ def adaptive_lab_clahe(rgb_uint8: np.ndarray, clip_limit: float = 1.8, blend_alp
 
 ### 6.1 자체 학습 모델 연동 아키텍처 및 의사결정 파이프라인
 
-본 웹 서비스는 외부 AI API를 일절 호출하지 않으며, 서버 시작 시(`FastAPI lifespan`) 본인이 직접 학습·양자화한 **`models/bunri_convnext_tiny_int8.onnx` (32.30MB)** 체크포인트를 메모리에 상주시켜 실시간 추론을 수행합니다 ([`app/inference.py`](app/inference.py), [`src/domain_rules.py`](src/domain_rules.py)).
+본 웹 서비스는 외부 AI API를 일절 호출하지 않으며, 본인이 직접 학습·양자화한 **`models/bunri_convnext_tiny_int8.onnx` (32.30MB)** 체크포인트를 **① 공개 웹에서는 브라우저 온디바이스 `ONNX Runtime Web (WASM)` 엔진([`app/static/vision_engine.js`](app/static/vision_engine.js))으로 직접 로드**하고, **② 로컬 개발·서버 구동 시에는 `FastAPI + ONNX Runtime` 백엔드([`app/inference.py`](app/inference.py), [`src/domain_rules.py`](src/domain_rules.py))로 자동 전환**하는 듀얼 추론 아키텍처로 구현하였습니다.
 
 ```
-[사용자 웹/모바일 브라우저]
+[사용자 웹/모바일 브라우저 (GitHub Pages WASM 온디바이스 / 로컬 FastAPI 듀얼 호환)]
    │  ① 폐기물 사진 업로드 / 카메라 촬영 / 9종 홀드아웃 샘플 원클릭
    ▼
-[FastAPI 입력 무결성 검증기 (src/preprocessing.py)]
+[입력 무결성 검증기 (app/static/vision_engine.js & src/preprocessing.py)]
    │  ② 확장자·MIME·최대용량(15MB)·손상 바이너리·최소해상도(48px)·단색 빈 화면(std<3.0) 차단
    ▼
-[4단계 도메인 전처리 엔진]
-   │  ③ EXIF 회전 보정 → Shades-of-Gray WB → CIE-LAB CLAHE → 중심 90% 크롭(224×224)
+[4단계 도메인 전처리 엔진 (TypedArray Canvas / OpenCV 동치 구현)]
+   │  ③ EXIF 회전 보정 → Shades-of-Gray WB(p=6) → CIE-LAB 8×8 CLAHE → 중심 90% 크롭(224×224)
    ▼
-[ONNX Runtime 추론 세션 (models/bunri_convnext_tiny_int8.onnx)]
-   │  ④ 단일 순전파로 온도 보정 로짓(1×9, T*=0.7014) + 공간 특징 CAM(1×9×7×7) 동시 추출 (~33ms)
+[ONNX Runtime 추론 세션 (models/bunri_convnext_tiny_int8.onnx · Cache Storage 캐싱)]
+   │  ④ 단일 순전파로 온도 보정 로짓(1×9, T*=0.7014) + 공간 특징 CAM(1×9×7×7) 동시 추출
    ▼
-[한국형 분리배출 확률 의사결정 엔진 (src/domain_rules.py)]
+[한국형 분리배출 확률 의사결정 엔진 (vision_engine.js & src/domain_rules.py)]
    └─ ⑤ 환경부 3단계 배출 수칙 + 오염 동반 확률(≥18%) 종량제 전환 경고 + 초목류 과태료 주의 + 저신뢰도(엔트로피>0.74) 재촬영 안내 반환
 ```
 
 ### 6.2 서비스 사용 안내 및 잘못된 입력 예외 처리
 
 1. **사용 방법**:
-   - **방법 A (즉시 체험)**: 좌측 **「원클릭 실전 테스트 샘플 (홀드아웃 테스트셋 9종)」** 중 원하는 폐기물 카드를 클릭하면 즉시 서버 ONNX 추론 결과와 실제 정답 일치 여부, 전처리 전·후 비교, CAM 히트맵이 우측에 표시됩니다.
+   - **방법 A (즉시 체험)**: 좌측 **「원클릭 실전 테스트 샘플 (홀드아웃 테스트셋 9종)」** 중 원하는 폐기물 카드를 클릭하면 즉시 자체 학습 ONNX 추론 결과와 실제 정답 일치 여부, 전처리 전·후 비교, CAM 히트맵이 우측에 표시됩니다.
    - **방법 B (내 사진 판독)**: 상단 점선 업로드 박스를 클릭(모바일에서는 카메라 즉시 실행)하거나 사진을 드래그 앤 드롭하여 업로드합니다.
    - **방법 C (모델 벤치마크·배출 사전 열람)**: 상단 탭 메뉴에서 **「학습 모델 성능 비교·분석」** 및 **「사용 안내 & 9종 배출 사전」**을 전환하여 확인합니다.
 2. **구현된 잘못된 입력 예외 처리 (총 6종 방어 로직)**:
@@ -268,7 +268,7 @@ def adaptive_lab_clahe(rgb_uint8: np.ndarray, clip_limit: float = 1.8, blend_alp
 #### 캡처 3. 자취생 최다 오배출 품목(`초목류 Vegetation`) 추론 및 음식물쓰레기 금지 과태료 경고 알림 작동
 ![초목류 오배출 경고](assets/screenshots/screen3_vegetation_alert.png)
 
-#### 캡처 4. 잘못된 입력(`.txt` 비이미지 파일 등) 업로드 시 서버 예외 차단 배너 작동 검증
+#### 캡처 4. 잘못된 입력(`.txt` 비이미지 파일 등) 업로드 시 입력 무결성 예외 차단 배너 작동 검증
 ![예외 처리 작동 화면](assets/screenshots/screen4_exception_handling.png)
 
 #### 캡처 5. 학습 모델 5종 객관적 성능 벤치마크 및 품목별 정밀도·재현율·F1 대시보드 탭
@@ -278,15 +278,12 @@ def adaptive_lab_clahe(rgb_uint8: np.ndarray, clip_limit: float = 1.8, blend_alp
 
 ## 7. 배포
 
-- **배포 플랫폼**: **Google Cloud Run** (GCP 프로젝트 `p-project-513602`, `asia-northeast3` 서울 리전, 관리형 서버리스 컨테이너, 자동 TLS/HTTPS 적용)
-- **공개 접속 URL**: **https://bunri-vision-30945587032.asia-northeast3.run.app**
-- **컨테이너 스펙**: `python:3.11-slim` 기반 경량 Docker 이미지 (`2 vCPU`, `1 GiB RAM`, ONNX Runtime CPU 추론 엔진 내장, 채점 종료 시까지 상시 공개 유지)
-- **주요 공개 API 엔드포인트**:
-  - `GET /` : 반응형 웹 프론트엔드 UI 제공
-  - `GET /api/health` : 로드된 자체 학습 가중치 파일명(`bunri_convnext_tiny_int8.onnx`), 용량 및 테스트셋 성능 메타데이터 반환
-  - `POST /api/predict` : `multipart/form-data` 이미지 업로드 실시간 추론 및 Spatial CAM·배출 가이드 반환
-  - `POST /api/predict-sample/{sample_id}` : 9종 홀드아웃 테스트 샘플 즉시 추론
-  - `POST /api/test-exception/{case_type}` : 비정상 입력 4종 서버 예외 처리 실시간 검증
+- **배포 플랫폼**: **GitHub Pages + GitHub Actions 자동 배포 파이프라인** ([`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml), 글로벌 CDN · 자동 HTTPS · 채점 종료 이후에도 영구 무료 상시 운영)
+- **공개 접속 URL**: **https://qwertypotter6873.github.io/bunri-vision/**
+- **배포 아키텍처 특징**:
+  - `main` 브랜치 푸시 시 [`scripts/build_pages_site.py`](scripts/build_pages_site.py)가 정적 웹 자산과 직접 학습한 `models/bunri_convnext_tiny_int8.onnx` (32.30MB) 가중치를 단일 번들로 패키징하여 자동 배포합니다.
+  - 최초 접속 시 브라우저가 자체 학습 ONNX 가중치를 다운로드한 뒤 **브라우저 Cache Storage에 영구 캐싱**하여, 외부 서버 장애·콜드스타트·개인 사진 외부 전송 걱정 없이 `ONNX Runtime Web (SIMD WASM)`으로 온디바이스 실시간 추론을 수행합니다.
+  - 동일한 웹 프론트엔드 코드를 로컬에서 `uvicorn app.main:app --port 8080`으로 실행하면 Python FastAPI 서버의 `/api/health`, `/api/predict`, `/api/predict-sample/{id}`, `/api/test-exception/{case}` 엔드포인트와 자동 연동됩니다.
 
 ---
 
@@ -336,7 +333,7 @@ pip install -r requirements-train.txt
 python scripts/download_data.py --data-dir data
 PYTHONPATH=. python src/train_and_evaluate.py
 
-# [Docker 실행 시] Cloud Run과 동일한 컨테이너 환경 로컬 구동
+# [Docker 실행 시] 컨테이너 기반 FastAPI 추론 서버 로컬 구동
 docker build -t bunri-vision .
 docker run -p 8080:8080 bunri-vision
 ```
